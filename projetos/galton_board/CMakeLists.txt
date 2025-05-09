@@ -35,14 +35,22 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(galton_board galton_board.c )
+add_executable(galton_board 
+    main.c
+    app/galton_board.c
+    drivers/oled_driver.c
+    drivers/buzzer_driver.c
+    hal/oled_hal.c
+    hal/buzzer_hal.c
+    lib/ssd1306/ssd1306_i2c.c 
+)
 
 pico_set_program_name(galton_board "galton_board")
 pico_set_program_version(galton_board "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
 pico_enable_stdio_uart(galton_board 0)
-pico_enable_stdio_usb(galton_board 0)
+pico_enable_stdio_usb(galton_board 1)
 
 # Add the standard library to the build
 target_link_libraries(galton_board
@@ -50,12 +58,15 @@ target_link_libraries(galton_board
 
 # Add the standard include files to the build
 target_include_directories(galton_board PRIVATE
-        ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}/include
+    ${CMAKE_CURRENT_LIST_DIR}/lib/ssd1306
 )
 
 # Add any user requested libraries
 target_link_libraries(galton_board 
-        
+    pico_stdlib
+    hardware_pwm
+    hardware_i2c
         )
 
 pico_add_extra_outputs(galton_board)
