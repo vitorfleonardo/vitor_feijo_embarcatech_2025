@@ -58,8 +58,10 @@ target_link_libraries(galton_board
 
 # Add the standard include files to the build
 target_include_directories(galton_board PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/include
-    ${CMAKE_CURRENT_LIST_DIR}/lib/ssd1306
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/drivers
+    ${CMAKE_CURRENT_SOURCE_DIR}/hal
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/ssd1306
 )
 
 # Add any user requested libraries
@@ -67,6 +69,7 @@ target_link_libraries(galton_board
     pico_stdlib
     hardware_pwm
     hardware_i2c
+    hardware_clocks
         )
 
 pico_add_extra_outputs(galton_board)

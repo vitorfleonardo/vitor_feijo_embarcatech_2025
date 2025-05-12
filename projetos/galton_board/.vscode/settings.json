@@ -42,6 +42,8 @@
         "compare": "c",
         "cstdint": "c",
         "oled_hal.h": "c",
-        "ssd1306_i2c.h": "c"
+        "ssd1306_i2c.h": "c",
+        "clocks.h": "c",
+        "stdlib.h": "c"
     }
 }
