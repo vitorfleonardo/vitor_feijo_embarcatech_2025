@@ -62,6 +62,8 @@ target_link_libraries(sintetizador_audio
     pico_stdlib
     hardware_adc
     hardware_dma
+    hardware_pwm
+    hardware_gpio
 )
 
 pico_add_extra_outputs(sintetizador_audio)
