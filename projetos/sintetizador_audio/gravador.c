@@ -4,6 +4,10 @@
 #include "hardware/dma.h"
 #include "hardware/pwm.h"
 #include "hardware/gpio.h"
+#include "hardware/i2c.h"
+
+#include "drivers/ssd1306.h"
+#include "drivers/ssd1306_i2c.h"
 
 // === Configurações ===
 #define MIC_GPIO            28
@@ -12,6 +16,12 @@
 #define RECORD_DURATION_S   2
 #define BUFFER_SIZE         (SAMPLE_RATE_HZ * RECORD_DURATION_S)
 #define ADC_CLOCK_DIV       (48000000.0f / SAMPLE_RATE_HZ)
+
+// === Display OLED SSD1306 ===
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+
+ssd1306_t oled;
 
 // === LEDs RGB ===
 #define LED_R 13
@@ -29,6 +39,21 @@
 static uint16_t audio_buffer[BUFFER_SIZE];
 static uint dma_chan;
 static dma_channel_config dma_cfg;
+
+void setup_display() {
+    i2c_init(i2c1, 400 * 1000);
+    gpio_set_function(14, GPIO_FUNC_I2C); // SDA
+    gpio_set_function(15, GPIO_FUNC_I2C); // SCL
+    gpio_pull_up(14);
+    gpio_pull_up(15);
+    ssd1306_init();
+}
+
+void oled_clear() {
+    extern uint8_t ssd1306_buffer[];
+    for (int i = 0; i < 1024; i++) ssd1306_buffer[i] = 0x00;
+    ssd1306_send_buffer(ssd1306_buffer, 1024);
+}
 
 void setup_leds() {
     gpio_init(LED_R); gpio_set_dir(LED_R, GPIO_OUT);
@@ -67,22 +92,36 @@ void init_adc_dma() {
 
 void gravar_audio() {
     printf("Gravando áudio...\n");
-    led_set_rgb(true, false, false); // Vermelho
+    led_set_rgb(true, false, false);
 
     adc_fifo_drain();
     adc_run(false);
+    oled_clear();
+
+    extern uint8_t ssd1306_buffer[];
+    for (int i = 0; i < SCREEN_WIDTH && i < BUFFER_SIZE; i++) {
+        uint16_t amostra = adc_read();
+        audio_buffer[i] = amostra;
+
+        int altura = (amostra * (SCREEN_HEIGHT - 1)) / 4095;
+        for (int y = 0; y < altura; y++) {
+            ssd1306_set_pixel(ssd1306_buffer, i, SCREEN_HEIGHT - 1 - y, true);
+        }
+    }
+
+    ssd1306_send_buffer(ssd1306_buffer, 1024);
 
     dma_channel_configure(
         dma_chan, &dma_cfg,
-        audio_buffer, &adc_hw->fifo,
-        BUFFER_SIZE, true
+        audio_buffer + SCREEN_WIDTH, &adc_hw->fifo,
+        BUFFER_SIZE - SCREEN_WIDTH, true
     );
 
     adc_run(true);
     dma_channel_wait_for_finish_blocking(dma_chan);
     adc_run(false);
 
-    led_set_rgb(false, true, false); // Verde
+    led_set_rgb(false, true, false);
     printf("Gravação concluída.\n");
 }
 
@@ -116,6 +155,7 @@ int main() {
 
     setup_leds();
     setup_botoes();
+    setup_display();
     init_adc_dma();
     setup_pwm_buzzer();
 

@@ -37,6 +37,7 @@ pico_sdk_init()
 
 add_executable(sintetizador_audio
     gravador.c
+    drivers/ssd1306_i2c.c
 )
 
 pico_set_program_name(sintetizador_audio "sintetizador_audio")
@@ -64,6 +65,7 @@ target_link_libraries(sintetizador_audio
     hardware_dma
     hardware_pwm
     hardware_gpio
+    hardware_i2c
 )
 
 pico_add_extra_outputs(sintetizador_audio)
