@@ -5,6 +5,7 @@
 #include "hardware/pwm.h"
 #include "hardware/gpio.h"
 #include "hardware/i2c.h"
+#include "pico/multicore.h"
 
 #include "drivers/ssd1306.h"
 #include "drivers/ssd1306_i2c.h"
@@ -39,6 +40,8 @@ ssd1306_t oled;
 static uint16_t audio_buffer[BUFFER_SIZE];
 static uint dma_chan;
 static dma_channel_config dma_cfg;
+
+volatile bool gravar_solicitado = false;
 
 void setup_display() {
     i2c_init(i2c1, 400 * 1000);
@@ -149,6 +152,16 @@ void reproduzir_audio() {
     printf("Reprodução finalizada.\n");
 }
 
+void core1_main() {
+    while (1) {
+        if (gravar_solicitado) {
+            gravar_audio();  // já faz captura e atualização da tela
+            gravar_solicitado = false;
+        }
+        tight_loop_contents();
+    }
+}
+
 int main() {
     stdio_init_all();
     sleep_ms(3000);
@@ -159,14 +172,16 @@ int main() {
     init_adc_dma();
     setup_pwm_buzzer();
 
+    multicore_launch_core1(core1_main);  // Inicializa o núcleo 1
+
     printf("Pressione Botão A para gravar. Botão B para reproduzir.\n");
 
     while (true) {
         led_set_rgb(false, false, false);
 
-        if (botao_apertado(BUTTON_A)) {
+        if (botao_apertado(BUTTON_A) && !gravar_solicitado) {
             while (botao_apertado(BUTTON_A)) tight_loop_contents();
-            gravar_audio();
+            gravar_solicitado = true;  // sinaliza para núcleo 1
         }
 
         if (botao_apertado(BUTTON_B)) {
@@ -179,3 +194,4 @@ int main() {
 
     return 0;
 }
+

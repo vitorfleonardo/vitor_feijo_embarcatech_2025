@@ -66,6 +66,7 @@ target_link_libraries(sintetizador_audio
     hardware_pwm
     hardware_gpio
     hardware_i2c
+    pico_multicore
 )
 
 pico_add_extra_outputs(sintetizador_audio)
